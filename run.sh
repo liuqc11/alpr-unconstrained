@@ -31,6 +31,7 @@ then
 fi
 
 lp_model="data/lp-detector/wpod-net_update1.h5"
+ocr_model="data/ocr-model/ocr_plate_all_gru.h5"
 input_dir=''
 output_dir=''
 csv_file=''
@@ -93,7 +94,8 @@ python vehicle-detection.py $input_dir $output_dir
 python license-plate-detection.py $output_dir $lp_model
 
 # OCR
-python license-plate-ocr.py $output_dir
+# python license-plate-ocr.py $output_dir
+python chinese-license-plate-ocr.py $output_dir $ocr_model
 
 # Draw output and generate list
 python gen-outputs.py $input_dir $output_dir > $csv_file

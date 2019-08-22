@@ -1,5 +1,6 @@
 
 import numpy as np
+from PIL import ImageFont, ImageDraw, Image
 import cv2
 
 
@@ -44,5 +45,11 @@ def write2img(Img,label,strg,txt_color=(0,0,0),bg_color=(255,255,255),font_size=
 
 	tpl = lambda x: tuple((x*wh_img).astype(int).tolist())
 
-	cv2.rectangle(Img, tpl(tl_corner), tpl(br_corner), bg_color, -1)	
-	cv2.putText(Img,strg,tpl(bl_corner),font,font_size,txt_color,3)
+	# cv2.rectangle(Img, tpl(tl_corner), tpl(br_corner), bg_color, -1)
+	# cv2.putText(Img,strg,tpl(bl_corner),font,font_size,txt_color,3)
+	fontC = ImageFont.truetype("./Font/platech.ttf", 14)
+	img = Image.fromarray(Img)
+	draw = ImageDraw.Draw(img)
+	draw.text(tpl(tl_corner), strg, (0, 0, 255), font=fontC)
+	Img = np.asarray(img)
+	return Img

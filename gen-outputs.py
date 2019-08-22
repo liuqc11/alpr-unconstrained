@@ -1,4 +1,6 @@
+import io
 import sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf8') 
 import cv2
 import numpy as np
 
@@ -48,10 +50,10 @@ for img_file in img_files:
 				draw_losangle(I,ptspx,RED,3)
 
 				if isfile(lp_label_str):
-					with open(lp_label_str,'r') as f:
+					with open(lp_label_str,'r',encoding='utf-8') as f:
 						lp_str = f.read().strip()
 					llp = Label(0,tl=pts.min(1),br=pts.max(1))
-					write2img(I,llp,lp_str)
+					I = write2img(I,llp,lp_str)
 
 					sys.stdout.write(',%s' % lp_str)
 
