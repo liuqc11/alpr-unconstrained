@@ -12,7 +12,7 @@ chars = [u"京", u"沪", u"津", u"渝", u"冀", u"晋", u"蒙", u"辽", u"吉",
              ]
 
 class LPR():
-    def __init__(self,model_detection,model_finemapping,model_seq_rec):
+    def __init__(self,model_seq_rec):
         # self.watch_cascade = cv2.CascadeClassifier(model_detection)
         # self.modelFineMapping = self.model_finemapping()
         # self.modelFineMapping.load_weights(model_finemapping)
@@ -36,11 +36,11 @@ class LPR():
     #     if right > max_right:
     #         right = max_right
     #     return [left,top,right-left,bottom-top]
-	#
+    #
     # def cropImage(self,image,rect):
     #     x, y, w, h = self.computeSafeRegion(image.shape,rect)
     #     return image[y:y+h,x:x+w]
-	#
+    #
     # def detectPlateRough(self,image_gray,resize_h = 720,en_scale =1.08 ,top_bottom_padding_rate = 0.05):
     #     if top_bottom_padding_rate>0.2:
     #         print("error:top_bottom_padding_rate > 0.2:",top_bottom_padding_rate)
@@ -116,7 +116,7 @@ class LPR():
     #     output = Activation("relu", name='relu4')(output)
     #     model = Model([input], [output])
     #     return model
-	#
+    #
     # def finemappingVertical(self,image,rect):
     #     resized = cv2.resize(image,(66,16))
     #     resized = resized.astype(np.float)/255
@@ -137,11 +137,19 @@ class LPR():
     #     return image,rect
 
     def recognizeOne(self,src):
-        x_tempx = src
+        x_tempx = cv2.imread(src)
         x_temp = cv2.resize(x_tempx,( 164,48))
         x_temp = x_temp.transpose(1, 0, 2)
         y_pred = self.modelSeqRec.predict(np.array([x_temp]))
         y_pred = y_pred[:,2:,:]
+        return self.fastdecode(y_pred)
+
+    def recognizeOneframe(self,src):
+        x_tempx = src
+        x_temp = cv2.resize(x_tempx, (164, 48))
+        x_temp = x_temp.transpose(1, 0, 2)
+        y_pred = self.modelSeqRec.predict(np.array([x_temp]))
+        y_pred = y_pred[:, 2:, :]
         return self.fastdecode(y_pred)
 
     # def SimpleRecognizePlateByE2E(self,image):
