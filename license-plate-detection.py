@@ -3,7 +3,6 @@ import keras
 import cv2
 import traceback
 
-from src.keras_utils 			import load_model
 from glob 						import glob
 from os.path 					import splitext, basename
 from src.utils 					import im2single
