@@ -39,11 +39,14 @@ if __name__ == '__main__':
         ocrmodel = LPR("data/ocr-model/ocr_plate_all_gru.h5")
 
         # Create an image we reuse for each detect
-        darknet_image = dn.make_image(dn.network_width(vehicle_net),
-                                      dn.network_height(vehicle_net), 3)
         vid = cv2.VideoCapture(input_file)
+        video_width = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
+        video_height = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        video_fps = vid.get(cv2.CAP_PROP_FPS)
+        darknet_image = dn.make_image(int(video_width),int(video_height), 3)
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-        videoWriter = cv2.VideoWriter(output_file, fourcc, 30, (960, 544))
+        videoWriter = cv2.VideoWriter(output_file, fourcc, int(video_fps),
+                                      (int(video_width),int(video_height)))
         print('Searching for vehicles and licenses using YOLO and Keras...')
         frame = 1
         while True:
@@ -51,12 +54,7 @@ if __name__ == '__main__':
             if not return_value:
                 break
             frame_rgb = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
-            frame_resized = cv2.resize(frame_rgb,
-                                       (dn.network_width(vehicle_net),
-                                        dn.network_height(vehicle_net)),
-                                       interpolation=cv2.INTER_LINEAR)
-
-            dn.copy_image_from_bytes(darknet_image, frame_resized.tobytes())
+            dn.copy_image_from_bytes(darknet_image, frame_rgb.tobytes())
             # im = nparray_to_image(arr)
             R = detect_image(vehicle_net, vehicle_meta, darknet_image, thresh=vehicle_threshold)
             R = [r for r in R if r[0].decode('utf-8') in ['car', 'bus', 'truck']]
@@ -98,7 +96,7 @@ if __name__ == '__main__':
             videoWriter.write(arr)
             print('finish writing %d frame!' % frame)
             frame = frame + 1
-        # videoWriter.release()
+        videoWriter.release()
     except:
         traceback.print_exc()
         sys.exit(1)
