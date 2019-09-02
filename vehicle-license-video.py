@@ -5,8 +5,10 @@ import traceback
 import cv2
 import numpy as np
 
-import darknet.python.darknet as dn
-from darknet.python.darknet import detect_frame, nparray_to_image
+# import darknet.python.darknet as dn
+# from darknet.python.darknet import detect_frame, nparray_to_image
+import darknetAB.darknet as dn
+from darknetAB.darknet import detect_image
 from src.drawing_utils import draw_label, draw_losangle, write2img
 from src.keras_ocr_utils import LPR
 from src.keras_utils import load_model, detect_lp
@@ -23,11 +25,11 @@ if __name__ == '__main__':
         # vehicle detection model
         vehicle_threshold = .5
 
-        vehicle_weights = b'data/vehicle-detector/yolo-voc.weights'
-        vehicle_netcfg = b'data/vehicle-detector/yolo-voc.cfg'
-        vehicle_dataset = b'data/vehicle-detector/voc.data'
+        vehicle_weights = b'darknetAB/yolov3.weights'
+        vehicle_netcfg = b'darknetAB/cfg/yolov3.cfg'
+        vehicle_dataset = b'darknetAB/cfg/coco.data'
 
-        vehicle_net = dn.load_net(vehicle_netcfg, vehicle_weights, 0)
+        vehicle_net = dn.load_net_custom(vehicle_netcfg, vehicle_weights, 0, 1)  # batchsize=1
         vehicle_meta = dn.load_meta(vehicle_dataset)
 
         # license plate detection model
@@ -36,21 +38,32 @@ if __name__ == '__main__':
         # license plate recognition model
         ocrmodel = LPR("data/ocr-model/ocr_plate_all_gru.h5")
 
+        # Create an image we reuse for each detect
+        darknet_image = dn.make_image(dn.network_width(vehicle_net),
+                                      dn.network_height(vehicle_net), 3)
         vid = cv2.VideoCapture(input_file)
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-        videoWriter = cv2.VideoWriter(output_file, fourcc, 25, (1280, 720))
+        videoWriter = cv2.VideoWriter(output_file, fourcc, 30, (960, 544))
         print('Searching for vehicles and licenses using YOLO and Keras...')
         frame = 1
         while True:
             return_value, arr = vid.read()
             if not return_value:
                 break
-            im = nparray_to_image(arr)
-            R, _ = detect_frame(vehicle_net, vehicle_meta, im, thresh=vehicle_threshold)
-            R = [r for r in R if r[0].decode('utf-8') in ['car', 'bus']]
+            frame_rgb = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
+            frame_resized = cv2.resize(frame_rgb,
+                                       (dn.network_width(vehicle_net),
+                                        dn.network_height(vehicle_net)),
+                                       interpolation=cv2.INTER_LINEAR)
+
+            dn.copy_image_from_bytes(darknet_image, frame_resized.tobytes())
+            # im = nparray_to_image(arr)
+            R = detect_image(vehicle_net, vehicle_meta, darknet_image, thresh=vehicle_threshold)
+            R = [r for r in R if r[0].decode('utf-8') in ['car', 'bus', 'truck']]
             if len(R):
                 WH = np.array(arr.shape[1::-1], dtype=float)
                 Lcars = []
+                # Icars = []
                 for i, r in enumerate(R):
 
                     cx, cy, w, h = (np.array(r[2]) / np.concatenate((WH, WH))).tolist()
@@ -59,6 +72,7 @@ if __name__ == '__main__':
                     label = Label(0, tl, br)
                     Lcars.append(label)
                     Icar = crop_region(arr, label)
+                    # Icars.append(Icar)
                     # print('Searching for license plates using WPOD-NET')
                     ratio = float(max(Icar.shape[:2])) / min(Icar.shape[:2])
                     side = int(ratio * 288.)
@@ -84,7 +98,7 @@ if __name__ == '__main__':
             videoWriter.write(arr)
             print('finish writing %d frame!' % frame)
             frame = frame + 1
-        videoWriter.release()
+        # videoWriter.release()
     except:
         traceback.print_exc()
         sys.exit(1)

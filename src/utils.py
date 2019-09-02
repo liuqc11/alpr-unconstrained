@@ -1,4 +1,5 @@
 import sys
+import traceback
 from glob import glob
 
 import cv2
@@ -78,7 +79,8 @@ def crop_region(I, label, bg=0.5):
 
     outsize = (outwh[1], outwh[0], ch) if ch > 1 else (outwh[1], outwh[0])
     if (np.array(outsize) < 0).any():
-        pause()
+        traceback.print_exc()
+        sys.exit(1)
     Iout = np.zeros(outsize, dtype=I.dtype) + bg
 
     offset = np.minimum(tl, 0) * (-1)
