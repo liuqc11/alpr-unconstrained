@@ -61,7 +61,6 @@ if __name__ == '__main__':
             if len(R):
                 WH = np.array(arr.shape[1::-1], dtype=float)
                 Lcars = []
-                # Icars = []
                 for i, r in enumerate(R):
 
                     cx, cy, w, h = (np.array(r[2]) / np.concatenate((WH, WH))).tolist()
@@ -70,7 +69,6 @@ if __name__ == '__main__':
                     label = Label(0, tl, br)
                     Lcars.append(label)
                     Icar = crop_region(arr, label)
-                    # Icars.append(Icar)
                     # print('Searching for license plates using WPOD-NET')
                     ratio = float(max(Icar.shape[:2])) / min(Icar.shape[:2])
                     side = int(ratio * 288.)
@@ -80,17 +78,14 @@ if __name__ == '__main__':
                                                 0.5)
                     if len(LlpImgs):
                         Ilp = LlpImgs[0]
-                        # Ilp = cv2.cvtColor(Ilp, cv2.COLOR_BGR2GRAY)
-                        # Ilp = cv2.cvtColor(Ilp, cv2.COLOR_GRAY2BGR)
-                        # s = Shape(Llp[0].pts)
                         res, confidence = ocrmodel.recognizeOneframe(Ilp * 255.)
 
                         pts = Llp[0].pts * label.wh().reshape(2, 1) + label.tl().reshape(2, 1)
                         ptspx = pts * np.array(arr.shape[1::-1], dtype=float).reshape(2, 1)
                         draw_losangle(arr, ptspx, RED, 3)
                         if confidence > 0.5:
-                            llp = Label(0, tl=pts.min(1), br=pts.max(1))
-                            arr = write2img(arr, llp, res)
+                             llp = Label(0, tl=pts.min(1), br=pts.max(1))
+                             arr = write2img(arr, llp, res)
                 for i, lcar in enumerate(Lcars):
                     draw_label(arr, lcar, color=YELLOW, thickness=3)
             videoWriter.write(arr)
